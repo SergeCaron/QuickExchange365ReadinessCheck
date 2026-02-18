@@ -20,6 +20,14 @@ The script also displays the status of the "Security defaults" policy and the Au
 
 This is typically usefull when migrating On Premises Exchange to Exchange 365.
 
+Finaly, a quick audit of the following items is done:
+- Microsoft 365 Data Location and Forwarding Information (organization level and each user)
+- Each of non default Microsoft 365 Security Policy
+- Licences and Multi-Factor Authentication for each user
+- Sharepoint and OneDrive for Business site usage details for each user
+
+*This is work in progress and all output may not be in English ;-)*
+
 ### Usage:
 
 Run this script with administrator privileges.
@@ -34,9 +42,14 @@ If a Microsoft DNS server is running on the same host, the script will use the D
 
 If not, the -ExternalDNS parameter can be used to specify any EXTERNAL recursive DNS server. The default is "dns.google", whatever it resolves to in your environment.
 
+Parameter -RequiredEXOVersion will override the default Exchange Online Management module 3.8.0 version used.
+Parameter -RequiredMGVersion will override the default Microsoft Graph module 2.30.0 used.
+
+Once connected, the script displays the Microsoft Graph scopes available to the logged in user. Given the principle of least privilege built in Microsoft Graph, you may have to query the permissions for some cmdlet(s) and adjust the user's roles.
+
 On exit, the script disconnects from the Microsoft 365 applications.
 
-Sample output:
+Sample output (without any user information):
 
 ````
 Please wait...
@@ -49,18 +62,6 @@ Description : Security defaults is a set of basic identity security mechanisms r
 DisplayName : Security Defaults
 IsEnabled   : True
 Using Exchange Online Management module version: 3.5.1
-
-----------------------------------------------------------------------------------------
-This V3 EXO PowerShell module contains new REST API backed Exchange Online cmdlets which doesn't require WinRM for Client-Server communication. You can now run these cmdlets after turning off WinRM Basic Auth in your client machine thus making it more secure.
-
-Unlike the EXO* prefixed cmdlets, the cmdlets in this module support full functional parity with the RPS (V1) cmdlets.
-
-V3 cmdlets in the downloaded module are resilient to transient failures, handling retries and throttling errors inherently.
-
-REST backed EOP and SCC cmdlets are also available in the V3 module. Similar to EXO, the cmdlets can be run without WinRM basic auth enabled.
-
-For more information check https://aka.ms/exov3-module
-----------------------------------------------------------------------------------------
 
 Authenticated client SMTP submission (SMTP AUTH) Status:
 --------------------------------------------------------
