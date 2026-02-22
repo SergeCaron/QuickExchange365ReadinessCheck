@@ -43,7 +43,15 @@ If a Microsoft DNS server is running on the same host, the script will use the D
 If not, the -ExternalDNS parameter can be used to specify any EXTERNAL recursive DNS server. The default is "dns.google", whatever it resolves to in your environment.
 
 Parameter -RequiredEXOVersion will override the default Exchange Online Management module 3.8.0 version used.
+
 Parameter -RequiredMGVersion will override the default Microsoft Graph module 2.30.0 used.
+
+Parameter -Scopes will override the default scopes used. These are
+-   Policy.Read.All
+-   Policy.Read.ConditionalAccess
+-   Policy.Read.AuthenticationMethod
+-   IdentityProvider.Read.All
+-	Directory.Read.All
 
 Once connected, the script displays the Microsoft Graph scopes available to the logged in user. Given the principle of least privilege built in Microsoft Graph, you may have to query the permissions for some cmdlet(s) and adjust the user's roles.
 
@@ -52,16 +60,51 @@ On exit, the script disconnects from the Microsoft 365 applications.
 Sample output (without any user information):
 
 ````
+Quick Microsoft 365 / Exchange 365 tenant audit (Version 1.5)
+Portions (C) theitbros.com (https://theitbros.com/)
+Portions (C) ALI TAJRAN (https:/www.alitajran.com/export-onedrive-usage-report)
+
 Please wait...
+Microsoft Graph Identity SignIns available versions: 2.30.0
+Microsoft Graph Users available versions: 2.30.0
+Microsoft Graph Reports available versions: 2.30.0
+
+Installing ExchangeOnlineManagement module ...
+Exchange Online Management module available versions: 3.8.0
 
 Enforcement policy status:
 --------------------------
-Description : Security defaults is a set of basic identity security mechanisms recommended by Microsoft. When enabled,
-              these recommendations will be automatically enforced in your organization. Administrators and users will
+Description : Security defaults is a set of basic identity security mechanisms recommended by Microsoft. When enabled, 
+              these recommendations will be automatically enforced in your organization. Administrators and users will 
               be better protected from common identity related attacks.
 DisplayName : Security Defaults
 IsEnabled   : True
-Using Exchange Online Management module version: 3.5.1
+
+Current Microsoft Graph scopes:
+============================================================
+
+See https://learn.microsoft.com/en-us/graph/permissions-reference for details.
+
+Application.Read.All
+AuditLog.Read.All
+DelegatedPermissionGrant.Read.All
+Directory.Read.All
+email
+IdentityProvider.Read.All
+openid
+Organization.Read.All
+Policy.Read.All
+Policy.Read.AuthenticationMethod
+Policy.Read.ConditionalAccess
+Policy.ReadWrite.ConditionalAccess
+profile
+Reports.Read.All
+ReportSettings.ReadWrite.All
+User.Read
+User.Read.All
+User.ReadWrite.All
+UserAuthenticationMethod.Read.All
+UserAuthenticationMethod.ReadWrite.All
 
 Authenticated client SMTP submission (SMTP AUTH) Status:
 --------------------------------------------------------
@@ -130,4 +173,9 @@ WARNING:: _sipfederationtls._tcp.yourdomain.ca is undefined in public DNS
 Disconnected from:  Microsoft Graph Command Line Tools
 
 ````
+The report continues with the follwing sections:
+-   Microsoft 365 Data Location and Forwarding Information:
+-   Explicit Microsoft 365 Policies
+-   Per user Licences and Multi-Factor Authentication
+-   Per user OneDriver and Sharepoint usage
 

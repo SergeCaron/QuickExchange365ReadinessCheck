@@ -1,7 +1,7 @@
 ﻿
 <#PSScriptInfo
 
-.VERSION 1.0
+.VERSION 1.5
 
 .GUID b9efde78-8f87-4b05-9b16-fdcec5884415
 
@@ -43,7 +43,15 @@ param(
 	[Parameter()]
 	[String]$ExternalDNS = "dns.google",
 	[String]$RequiredMGVersion = "2.30.0",
-	[String]$RequiredEXOVersion = "3.8.0"
+	[String]$RequiredEXOVersion = "3.8.0",
+	[string[]]$Scopes = @(
+		'Policy.Read.All',
+		'Policy.Read.ConditionalAccess',
+		'Policy.Read.AuthenticationMethod',
+		'IdentityProvider.Read.All',
+		'Directory.Read.All'
+	)
+
 )
 
 # Log a transcript of this session
@@ -51,7 +59,7 @@ $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFo
 Start-Transcript -Path "$DesktopPath\QuickExchange365ReadinessCheck.txt" -Append
 
 Write-Host
-Write-Host "Quick Microsoft 365 / Exchange 365 tenant audit" -ForegroundColor Cyan
+Write-Host "Quick Microsoft 365 / Exchange 365 tenant audit (Version 1.5)" -ForegroundColor Cyan
 Write-Host "Portions (C) theitbros.com (https://theitbros.com/)"  -ForegroundColor Cyan
 Write-Host "Portions (C) ALI TAJRAN (https:/www.alitajran.com/export-onedrive-usage-report)"  -ForegroundColor Cyan
 
@@ -157,7 +165,7 @@ if ($Null -ne $(Get-Module -Name Microsoft.Graph.Identity.SignIns)) {
 	try {
 		Write-Host
 		# Refer to https://graphpermissions.merill.net/permission/ for details
-		Connect-MgGraph -NoWelcome -Scopes "Policy.ReadWrite.ConditionalAccess", "Policy.Read.All", "User.Read.All", "Reports.Read.All", "ReportSettings.ReadWrite.All", "UserAuthenticationMethod.ReadWrite.All" -ErrorAction Stop
+		Connect-MgGraph -NoWelcome -Scopes $Scopes -ErrorAction Stop
 		Write-Host "Enforcement policy status:"
 		Write-Host "--------------------------"
 		(Get-MgPolicyIdentitySecurityDefaultEnforcementPolicy | Format-List Description, DisplayName, IsEnabled | Out-String).Trim()
@@ -345,27 +353,27 @@ try {
 		
 	Get-Mailbox | Format-Table DisplayName, Database, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward -AutoSize
 	
-	Write-Host "Stratégies Microsoft 365" -ForegroundColor Cyan
+	Write-Host "Explicit Microsoft 365 Policies" -ForegroundColor Cyan
 	Write-Host $Separator -ForegroundColor Cyan
 
 	Write-Host
-	Write-Host "Paramètres des stratégies AntiPhish:"
+	Write-Host "Explicit AntiPhish policies:"
 	Get-AntiPhishPolicy | Where-Object { $_.IsDefault -eq $False } | Select-Object Name, Enable* | Format-List *
 
 	Write-Host
-	Write-Host "Paramètres des stratégies de filtrage du courrier indésirable:"
+	Write-Host "Explicit Unsollicited email filters:"
 	Get-HostedContentFilterPolicy | Where-Object { $_.IsDefault -eq $False } | Select-Object Name, Enable* | Format-List *
 	
 	Write-Host
-	Write-Host "Paramètres des stratégies de filtrage des programmes malveillants:"
+	Write-Host "Explicit Malware Filters:"
 	Get-MalwareFilterPolicy | Where-Object { $_.IsDefault -eq $False } | Select-Object Name, Enable* | Format-List *
 
 	Write-Host
-	Write-Host "Paramètres des stratégies de pièces jointes sécurisées:"
+	Write-Host "Explicit Safe Attachments protection for email messages filters:"
 	Get-SafeAttachmentPolicy | Where-Object { $_.IsBuiltInProtection -eq $False } | Select-Object Name, Enable* | Format-List *
 
 	Write-Host
-	Write-Host "Paramètres stratégies de liens approuvés:"
+	Write-Host "Explicit URL scanning and rewriting filters:"
 	Get-SafeLinksPolicy | Where-Object { $_.IsBuiltInProtection -eq $False } | Select-Object Name, Enable* | Format-List *
 
 	Write-Host "Licences and Multi-Factor Authentication" -ForegroundColor Cyan
