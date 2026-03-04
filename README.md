@@ -23,6 +23,7 @@ This is typically usefull when migrating On Premises Exchange to Exchange 365.
 Finaly, a quick audit of the following items is done:
 - Microsoft 365 Data Location and Forwarding Information (organization level and each user)
 - Each of non default Microsoft 365 Security Policy
+- The Azure Information Protection (AIP) and Email configuration
 - Licences and Multi-Factor Authentication for each user
 - Sharepoint and OneDrive for Business site usage details for each user
 
@@ -45,6 +46,8 @@ If not, the -ExternalDNS parameter can be used to specify any EXTERNAL recursive
 Parameter -RequiredEXOVersion will override the default Exchange Online Management module 3.8.0 version used.
 
 Parameter -RequiredMGVersion will override the default Microsoft Graph module 2.30.0 used.
+
+Parameter -RequiredAIPVersion will ocerrride the default Azure Information Protection Module 3.0.0.1 used.
 
 Parameter -Scopes will override the default scopes used. These are
 -   Policy.Read.All

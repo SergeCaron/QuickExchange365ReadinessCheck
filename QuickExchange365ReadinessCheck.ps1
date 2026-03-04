@@ -1,7 +1,7 @@
 ﻿
 <#PSScriptInfo
 
-.VERSION 1.5
+.VERSION 1.6
 
 .GUID b9efde78-8f87-4b05-9b16-fdcec5884415
 
@@ -11,7 +11,7 @@
 
 .COPYRIGHT Copyright (c) 2023-2026 PC-Évolution enr. This code is licensed under the GNU General Public License (GPL).
 
-.TAGS Exchange365 Office365 migration
+.TAGS Exchange365 Office365 migration configuration
 
 .LICENSEURI https://www.gnu.org/licenses/gpl-3.0.en.html
 
@@ -23,7 +23,7 @@
 
 .REQUIREDSCRIPTS
 
-.EXTERNALSCRIPTDEPENDENCIES ExchangeOnlineManagement, Microsoft.Graph.Identity.SignIns, Microsoft.Graph.Users, and Microsoft.Graph.Reports modules
+.EXTERNALSCRIPTDEPENDENCIES ExchangeOnlineManagement, AipService, Microsoft.Graph.Identity.SignIns, Microsoft.Graph.Users, and Microsoft.Graph.Reports modules
 
 .RELEASENOTES
 
@@ -44,6 +44,7 @@ param(
 	[String]$ExternalDNS = "dns.google",
 	[String]$RequiredMGVersion = "2.30.0",
 	[String]$RequiredEXOVersion = "3.8.0",
+	[String]$RequiredAIPVersion = "3.0.0.1",
 	[string[]]$Scopes = @(
 		'Policy.Read.All',
 		'Policy.Read.ConditionalAccess',
@@ -59,7 +60,7 @@ $DesktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFo
 Start-Transcript -Path "$DesktopPath\QuickExchange365ReadinessCheck.txt" -Append
 
 Write-Host
-Write-Host "Quick Microsoft 365 / Exchange 365 tenant audit (Version 1.5)" -ForegroundColor Cyan
+Write-Host "Quick Microsoft 365 / Exchange 365 tenant audit (Version 1.6)" -ForegroundColor Cyan
 Write-Host "Portions (C) theitbros.com (https://theitbros.com/)"  -ForegroundColor Cyan
 Write-Host "Portions (C) ALI TAJRAN (https:/www.alitajran.com/export-onedrive-usage-report)"  -ForegroundColor Cyan
 
@@ -157,6 +158,29 @@ if ($Null -eq $(Get-InstalledModule -Name ExchangeOnlineManagement -RequiredVers
 Import-Module ExchangeOnlineManagement -RequiredVersion $RequiredEXOVersion -ErrorAction SilentlyContinue
 $Versions = (Get-Module -Name ExchangeOnlineManagement -ListAvailable).Version
 Write-Host "Exchange Online Management module available versions:", $Versions
+
+# Current Azure Information Protection Module
+if ($Null -eq $(Get-InstalledModule -Name AipService -RequiredVersion $RequiredAIPVersion -ErrorAction SilentlyContinue)) {
+	$UserExecutionPolicy = $(Get-ExecutionPolicy -Scope CurrentUser)
+	try {
+		Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
+		Write-Host
+		Write-Host "Installing Azure Information Protection module ..."
+		Install-Module -Name AipService -RequiredVersion $RequiredAIPVersion -Scope CurrentUser -ErrorAction Stop
+	}
+	catch {
+		Write-Warning "Azure Information Protection service parameters are not available if module AipService is not installed."
+		exit 911
+	}
+	finally {
+		Set-ExecutionPolicy -ExecutionPolicy $UserExecutionPolicy -Scope CurrentUser
+	}
+}
+
+# Load Azure Information Protection module (Abort on error!)
+Import-Module AipService -RequiredVersion $RequiredAIPVersion -ErrorAction SilentlyContinue
+$Versions = (Get-Module -Name AipService -ListAvailable).Version
+Write-Host "Azure Information Protection module available versions:", $Versions
 
 ### Connect to Microsoft 365 tenant
 
@@ -376,6 +400,29 @@ try {
 	Write-Host "Explicit URL scanning and rewriting filters:"
 	Get-SafeLinksPolicy | Where-Object { $_.IsBuiltInProtection -eq $False } | Select-Object Name, Enable* | Format-List *
 
+	# See https://prof-it.services/docs/fixing-azure-information-protection-aip-and-configuring-email-encryption
+
+	Write-Host "Azure Information Protection (AIP) and Email configuration:" -ForegroundColor Cyan
+	Write-Host $separator -ForegroundColor Cyan
+	Write-Host
+
+	Connect-AipService -ErrorAction Stop
+	$Protection = Get-AipService
+	if ($Protection -eq "Enabled") { $Color = "Green" } else { $Color = "Red" }
+	Write-Host "Azure Information Protection service is $Protection." -ForegroundColor $Color
+	Write-Host
+
+	Write-Host "Information Rights Management (IRM) configuration" -ForegroundColor Cyan
+	Get-IRMConfiguration | Select-Object * -ExcludeProperty *Location, DistinguishedName, Identity, ObjectCategory, ObjectClass, `
+		WhenChangedUTC, WhenCreatedUTC, ExchangeObjectId, OrganizationalUnitRoot, OrganizationId, Id, Guid `
+		| Format-List *
+
+	Write-Host "Office Message Encryption (OME) configuration" -ForegroundColor Cyan
+	Get-OMEConfiguration -Identity "OME Configuration" | Select-Object * -ExcludeProperty Identity | Format-List *
+
+	Disconnect-AipService
+	Write-Host
+	
 	Write-Host "Licences and Multi-Factor Authentication" -ForegroundColor Cyan
 	Write-Host $Separator -ForegroundColor Cyan
 
